@@ -4,6 +4,7 @@ from .event import BlockEvent, ChatEvent, ProjectileEvent
 from .entity import Entity
 from .block import Block
 import math
+import numpy as np
 from .util import flatten
 
 """ Minecraft PI low level api v0.1_1
@@ -296,12 +297,23 @@ class Minecraft:
         s = self.conn.sendReceive(b"world.getBlocks", intFloor(args))
         return map(int, s.split(","))
 
+    def getBlocksWithData(self, *args):
+        """Get a cuboid of blocks (x0,y0,z0,x1,y1,z1) => [id:int]"""
+        s = self.conn.sendReceive(b"world.getBlocksWithData", intFloor(args))
+        return map(int, s.split(","))
+
     def setBlock(self, *args):
         """Set block (x,y,z,id,[data])"""
         self.conn.send(b"world.setBlock", intFloor(args))
 
     def setBlocks(self, *args):
         """Set a cuboid of blocks (x0,y0,z0,x1,y1,z1,id,[data])"""
+        if isinstance(args[3], np.ndarray):
+            btype, data = args[3:5]
+            p1 = args[:3]
+            p2 = (p1[0] + btype.shape[0] - 1, p1[1] + btype.shape[1] - 1, p1[2] + btype.shape[2] - 1)
+            args = p1, p2 + tuple(btype.flatten()) + tuple(data.flatten())
+        print(args)
         self.conn.send(b"world.setBlocks", intFloor(args))
 
     def setSign(self, *args):
